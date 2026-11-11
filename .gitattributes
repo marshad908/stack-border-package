@@ -1,0 +1,3 @@
+# Keep LF line endings everywhere, also on Windows checkouts.
+# The CLI starts with "#!/usr/bin/env node", which breaks on macOS and Linux with CRLF.
+* text=auto eol=lf

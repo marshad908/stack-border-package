@@ -1,0 +1,59 @@
+{
+  "name": "stackborder",
+  "version": "0.1.0",
+  "description": "Find out which third-party vendors a website or codebase sends data to, and score how much of it stays under EU law.",
+  "keywords": [
+    "gdpr",
+    "eu",
+    "data-sovereignty",
+    "subprocessors",
+    "privacy",
+    "cloud-act",
+    "ai-act",
+    "compliance",
+    "scanner",
+    "cli"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "bin": {
+    "stackborder": "bin/stackborder.js"
+  },
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./vendors.json": "./data/vendors.json",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "bin",
+    "src",
+    "data",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=20.10"
+  },
+  "scripts": {
+    "test": "node --test \"test/*.test.js\"",
+    "test:types": "tsc -p test/types/tsconfig.json",
+    "test:live": "node --test \"test/live/*.test.js\"",
+    "prepublishOnly": "npm test && npm run test:types"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marshad908/stack-border-package.git"
+  },
+  "bugs": {
+    "url": "https://github.com/marshad908/stack-border-package/issues"
+  },
+  "homepage": "https://github.com/marshad908/stack-border-package#readme"
+}
