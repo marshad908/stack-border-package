@@ -53,7 +53,7 @@ describe('diffLines and hashLines', () => {
 });
 
 describe('extractUrls', () => {
-  it('finds absolute and protocol-relative URLs and normalises them', () => {
+  it('finds absolute and protocol-relative URLs and normalizes them', () => {
     const urls = extractUrls('<script src="//js.stripe.com/v3/?x=1"></script> <a href="http://Example.com/a#b">x</a>');
     assert.deepEqual(urls.sort(), ['https://example.com/a', 'https://js.stripe.com/v3/']);
   });

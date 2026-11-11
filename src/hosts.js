@@ -2,7 +2,7 @@
 
 const URL_RE = /(?:https?:)?\/\/[a-z0-9][a-z0-9.-]*\.[a-z]{2,}(?:[/?#][^\s"'<>)\\`]*)?/gi;
 
-/** Every absolute or protocol-relative URL in a text, normalised to https://host/path. */
+/** Every absolute or protocol-relative URL in a text, normalized to https://host/path. */
 export function extractUrls(text) {
   const out = new Set();
   for (const match of String(text).matchAll(URL_RE)) {

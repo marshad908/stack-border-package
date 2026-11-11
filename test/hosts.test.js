@@ -35,7 +35,7 @@ describe('isOwnHost', () => {
 });
 
 describe('extractUrls', () => {
-  it('normalises absolute and protocol-relative URLs to https', () => {
+  it('normalizes absolute and protocol-relative URLs to https', () => {
     const urls = extractUrls('<script src="//cdn.example.org/a.js?x=1"></script> fetch("http://api.acme.io/v1")');
     assert.deepEqual(urls.sort(), ['https://api.acme.io/v1', 'https://cdn.example.org/a.js']);
   });

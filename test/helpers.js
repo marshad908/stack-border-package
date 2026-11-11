@@ -39,7 +39,7 @@ export async function startServer(handler) {
 
 /**
  * Runs the CLI as a user would and collects its output.
- * Colour is off by default; pass `{ NO_COLOR: undefined, FORCE_COLOR: '1' }` to turn it on.
+ * Color is off by default; pass `{ NO_COLOR: undefined, FORCE_COLOR: '1' }` to turn it on.
  */
 export function runCli(args, { env = {}, cwd } = {}) {
   const merged = { ...process.env, NO_COLOR: '1', ...env };

@@ -1,5 +1,7 @@
 # stackborder
 
+[![Tests](https://github.com/marshad908/stack-border-package/actions/workflows/test.yml/badge.svg)](https://github.com/marshad908/stack-border-package/actions/workflows/test.yml)
+
 Find out which third-party vendors a website or codebase sends data to, and how much of it stays under EU law.
 
 ```text
@@ -46,6 +48,8 @@ npx stackborder <domain>                   # scan a public website
 npx stackborder --repo <folder>            # scan a local codebase
 npx stackborder <domain> --repo <folder>   # both, merged into one report
 ```
+
+Not online yet? Scan the code with `--repo`. Local addresses such as `localhost:3000` or `192.168.1.20` cannot be scanned from the outside, and the command tells you so.
 
 | Option | Description |
 | --- | --- |
@@ -117,7 +121,7 @@ Every report says what it could and could not check:
   Checked: DNS · homepage, 8 script files · security policy (CSP) · code not scanned (add --repo to find server-side vendors)
 ```
 
-- **Unrecognised domains.** Third-party hosts the site loads from that match no vendor are listed instead of dropped (`report.unrecognized` in JSON).
+- **Unrecognized domains.** Third-party hosts the site loads from that match no vendor are listed instead of dropped (`report.unrecognized` in JSON).
 - **Coverage.** `report.coverage` records whether DNS answered, whether the homepage loaded or was blocked by an anti-bot check, how many script files were read, whether a CSP was present, and how many manifests, source files and env templates a repository scan read.
 - **Anti-bot pages are detected.** A challenge page is never scanned as if it were the real site; the report says the homepage was blocked.
 
@@ -217,7 +221,7 @@ Network and input problems throw a `FetchError` with a `code`:
 ## Limitations
 
 - Vendors used only on the server side (for example a database behind your API) are invisible to a domain scan. Add `--repo`.
-- A vendor that is not in the database is not scored. When the site loads from it, it is listed under unrecognised domains so you can check it.
+- A vendor that is not in the database is not scored. When the site loads from it, it is listed under unrecognized domains so you can check it.
 - Scripts that load only after a click or a cookie consent are not run; the CSP header and the site's own bundles usually still reveal them.
 - Real `.env` files are never opened, so a vendor configured only there and nowhere in code or templates is not found.
 - Large repositories are read up to 4,000 source files (40 MB); the report says when that limit was reached.

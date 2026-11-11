@@ -1,5 +1,5 @@
 // Tests for the "never miss silently" features: extra signal sources,
-// unrecognised domains, anti-bot detection and coverage reporting.
+// unrecognized domains, anti-bot detection and coverage reporting.
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { detectVendors, unrecognizedDomains, looksBlocked, scanRepo, buildReport, toVendorRows } from '../src/index.js';
@@ -149,7 +149,7 @@ describe('scanRepo source code and env templates', () => {
 });
 
 describe('report coverage fields', () => {
-  it('always carries coverage and unrecognised lists', () => {
+  it('always carries coverage and unrecognized lists', () => {
     const report = buildReport({ target: 'acme.eu', kind: 'domain', vendors: [] });
     assert.deepEqual(report.coverage, {});
     assert.deepEqual(report.unrecognized, []);

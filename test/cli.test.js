@@ -49,6 +49,13 @@ describe('cli: input validation', () => {
     ['an upload value that is not a URL', ['--repo', '.', '--upload', 'not a url', '--token', 't'], /expects a URL/],
     ['an invalid domain', ['not a domain'], /"not a domain" is not a valid/],
     ['a missing repo folder', ['--repo', './does-not-exist-anywhere'], /is not a folder/],
+    // Local addresses point to --repo, so a project that is not online yet can still be scanned.
+    ['localhost with a port', ['localhost:3000'], /"localhost:3000" is not a public domain[\s\S]*npx stackborder --repo \./],
+    ['a local URL', ['http://127.0.0.1:8080/app'], /is not a public domain[\s\S]*--repo \./],
+    ['a private network address', ['192.168.1.20'], /is not a public domain[\s\S]*--repo \./],
+    ['a .local name', ['myapp.local'], /is not a public domain[\s\S]*--repo \./],
+    ['a single name', ['myapp'], /is not a public domain[\s\S]*--repo \./],
+    ['a local address together with --repo', ['localhost', '--repo', 'src'], /Leave out the domain[\s\S]*--repo src/],
   ];
   for (const [label, args, message] of cases) {
     it(`rejects ${label} with exit code 1`, async () => {
@@ -80,12 +87,12 @@ describe('cli: scanning a repository', () => {
     assert.equal(typeof report.score.score, 'number');
   });
 
-  it('uses no colour codes when NO_COLOR is set', async () => {
+  it('uses no color codes when NO_COLOR is set', async () => {
     const { stdout } = await runCli(['--repo', usStack.root]);
     assert.doesNotMatch(stdout, /\x1b\[/);
   });
 
-  it('uses colour when FORCE_COLOR is set', async () => {
+  it('uses color when FORCE_COLOR is set', async () => {
     const { stdout } = await runCli(['--repo', usStack.root], { env: { NO_COLOR: undefined, FORCE_COLOR: '1' } });
     assert.match(stdout, /\x1b\[/);
   });

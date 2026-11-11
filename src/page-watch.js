@@ -19,7 +19,7 @@ function decodeEntity(match, body) {
 const NOISE = /^(©|copyright\b|last (updated|modified)\b|\d{1,2}:\d{2})/i;
 
 /**
- * Visible text of an HTML page as unique, whitespace-normalised lines, in page order.
+ * Visible text of an HTML page as unique, whitespace-normalized lines, in page order.
  * @param {string} html
  * @returns {string[]}
  */
@@ -63,7 +63,7 @@ export function diffLines(before, after) {
 }
 
 /**
- * Downloads a public page and returns its normalised lines and their hash.
+ * Downloads a public page and returns its normalized lines and their hash.
  * @param {string} url
  */
 export async function snapshotPage(url) {

@@ -49,7 +49,7 @@ void example;
 // @ts-expect-error: detectVendors does not accept arbitrary keys
 detectVendors({ unknownSignal: ['x'] });
 
-// Coverage and unrecognised domains are part of every report.
+// Coverage and unrecognized domains are part of every report.
 async function coverageTypes(): Promise<void> {
   const report = await scanRepo('.');
   const files: number | undefined = report.coverage.repo?.sourceFiles;

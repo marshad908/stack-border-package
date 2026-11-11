@@ -14,15 +14,15 @@ export async function scanDomain(domain, opts = {}) {
   const collected = await collectDomainSignals(domain, opts);
   opts.onProgress?.({ id: 'match', label: 'Matching vendors', status: 'running' });
 
-  const { html, ...signals } = collected.signals;
-  const vendors = detectFromSignals({ ...signals, html }, html.slice(0, 500_000));
+  const { signals } = collected;
+  const vendors = detectFromSignals(signals, signals.html.slice(0, 500_000));
   const unrecognized = unrecognizedDomains(
     collected.seenHosts,
     (host) => isOwnHost(host, collected.domain),
     new Map(vendors.map((v) => [v.id, v.evidence])),
   );
 
-  const detail = `${vendors.length} vendors found${unrecognized.length ? `, ${unrecognized.length} unrecognised domains` : ''}`;
+  const detail = `${vendors.length} vendors found${unrecognized.length ? `, ${unrecognized.length} unrecognized domains` : ''}`;
   opts.onProgress?.({ id: 'match', label: 'Matching vendors', status: 'done', detail });
 
   return buildReport({

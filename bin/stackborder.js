@@ -218,6 +218,35 @@ function parseUploadUrl(input) {
   return url;
 }
 
+// Addresses that only exist on the user's own machine or network. A domain scan looks at a site
+// from the outside, so these cannot be scanned; the error points to --repo instead.
+const LOCAL_ADDRESSES = [
+  /^localhost$/,
+  /\.(localhost|local|internal|lan|home|test|example|invalid)$/, // local-only or reserved names
+  /^[^.]+$/, // a single name such as "myapp", which only resolves inside a network
+  /^(127|10)\.\d+\.\d+\.\d+$/, // loopback and private IPv4
+  /^192\.168\.\d+\.\d+$/,
+  /^172\.(1[6-9]|2\d|3[01])\.\d+\.\d+$/,
+  /^169\.254\.\d+\.\d+$/, // link-local
+  /^\[.*\]$/, // IPv6 addresses such as [::1]
+];
+
+function isLocalAddress(input) {
+  try {
+    const { hostname } = new URL(/^[a-z]+:\/\//i.test(input) ? input : `http://${input}`);
+    return LOCAL_ADDRESSES.some((pattern) => pattern.test(hostname));
+  } catch {
+    return false; // not an address at all: the normal "not a valid domain" message explains it
+  }
+}
+
+function localAddressMessage(domain, repo) {
+  const next = repo
+    ? `Leave out the domain to scan only the code: npx stackborder --repo ${repo}`
+    : 'To scan a project that is not online yet, run: npx stackborder --repo .';
+  return `"${domain}" is not a public domain, so it cannot be scanned from the outside.\n  ${next}`;
+}
+
 // ---------------------------------------------------------------------------
 // Commands
 // ---------------------------------------------------------------------------
@@ -275,6 +304,7 @@ async function main(argv = process.argv.slice(2)) {
     return 0;
   }
   if (!options.domain && !options.repo) throw new UsageError('Pass a domain, --repo <folder>, or both');
+  if (options.domain && isLocalAddress(options.domain)) throw new UsageError(localAddressMessage(options.domain, options.repo));
 
   const report = await runScans(options);
   console.log(options.json ? JSON.stringify(report, null, 2) : formatReport(report));
