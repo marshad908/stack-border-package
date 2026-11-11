@@ -1,5 +1,6 @@
-// JSON import works in Node (20.10+) and in bundlers such as Turbopack and webpack.
-import vendorData from '../data/vendors.json' with { type: 'json' };
+// The database is data/vendors.json, compiled to plain JavaScript (see scripts/generate-data.js) so it
+// loads without warnings on every Node version and in bundlers such as Turbopack and webpack.
+import { vendorData } from './generated-data.js';
 import { regionOf, countryName, cloudActExposed } from './jurisdiction.js';
 
 let cache;

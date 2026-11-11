@@ -7,7 +7,10 @@
 //   2  the score is below --fail-under (useful in CI)
 import { parseArgs } from 'node:util';
 import { scanDomain, scanRepo, mergeVendorRows, buildReport, REGION_LABELS, VERSION } from '../src/index.js';
-import pkg from '../package.json' with { type: 'json' };
+import { createRequire } from 'node:module';
+
+// The CLI is never bundled, so it reads package.json with require (a JSON import warns on older Node).
+const pkg = createRequire(import.meta.url)('../package.json');
 
 const EXIT_ERROR = 1;
 const EXIT_BELOW_THRESHOLD = 2;

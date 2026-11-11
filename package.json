@@ -40,10 +40,11 @@
     "node": ">=20.10"
   },
   "scripts": {
+    "generate": "node scripts/generate-data.js",
     "test": "node --test \"test/*.test.js\"",
     "test:types": "tsc -p test/types/tsconfig.json",
     "test:live": "node --test \"test/live/*.test.js\"",
-    "prepublishOnly": "npm test && npm run test:types"
+    "prepublishOnly": "npm run generate && npm test && npm run test:types"
   },
   "devDependencies": {
     "typescript": "^5.9.3"

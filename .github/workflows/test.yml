@@ -1,0 +1,61 @@
+# Runs on every push and pull request in the public package repository:
+# the tests on Linux, macOS and Windows with every supported Node.js version, then the packed
+# package is installed like a user would install it from npm and the command is run for real.
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.os }} · Node ${{ matrix.node }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node: ["20.10", "22.0", 22, 24] # oldest supported versions and the current ones
+    defaults:
+      run:
+        shell: bash # the same commands on every system (Windows runners include bash)
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      # The shell expands the glob, so this also works on Node 20 (which does not expand it itself).
+      - name: Unit tests
+        run: node --test test/*.test.js
+
+      - name: Install the packed package like a user would
+        run: |
+          npm pack
+          npm install --global ./stackborder-*.tgz
+
+      - name: Run the installed command
+        run: |
+          stackborder --version
+          stackborder --help > /dev/null
+          stackborder --repo . --json > repo-report.json
+          node -e "const r = JSON.parse(require('fs').readFileSync('repo-report.json', 'utf8')); if (!r.coverage) throw new Error('no coverage in report')"
+
+      - name: Scan a real website
+        run: stackborder example.com
+
+  types:
+    name: TypeScript types
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: npm run test:types

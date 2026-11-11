@@ -1,7 +1,9 @@
 // End-to-end tests: run the real executable the way a user would.
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import pkg from '../package.json' with { type: 'json' };
+import { readFileSync } from 'node:fs';
+
+const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 import { makeRepo, runCli, startServer } from './helpers.js';
 
 let usStack;
