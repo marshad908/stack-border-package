@@ -2,6 +2,7 @@
 // Content-Security-Policy, and the third-party resources its homepage and its
 // own scripts load.
 import { Resolver } from 'node:dns/promises';
+import { plural } from './plural.js';
 import { safeFetch, normalizeDomain, FetchError } from './safe-fetch.js';
 import { extractUrls, resourceUrls, cspHosts, isOwnHost } from './hosts.js';
 
@@ -144,7 +145,7 @@ export async function collectDomainSignals(input, opts = {}) {
       seenHosts.push({ host, source: 'Page resource' });
       if (!isOwnHost(host, domain)) hosts.push({ host, source: 'Page resource' });
     }
-    progress({ id: 'http', label: 'Loading the homepage', status: 'done', detail: `${res.status} from ${new URL(res.url).hostname}, ${resources.length} resources` });
+    progress({ id: 'http', label: 'Loading the homepage', status: 'done', detail: `${res.status} from ${new URL(res.url).hostname}, ${plural(resources.length, 'resource')}` });
 
     progress({ id: 'scripts', label: 'Reading the site’s own scripts', status: 'running' });
     const ownScripts = resources
@@ -165,7 +166,7 @@ export async function collectDomainSignals(input, opts = {}) {
     }
     urls = [...new Set([...urls, ...extractUrls(bundleText)])];
     if (bundleText) html += `\n${bundleText.slice(0, MAX_BUNDLE_TEXT)}`;
-    progress({ id: 'scripts', label: 'Reading the site’s own scripts', status: 'done', detail: `${coverage.scripts} of ${ownScripts.length} script files read` });
+    progress({ id: 'scripts', label: 'Reading the site’s own scripts', status: 'done', detail: `${coverage.scripts} of ${plural(ownScripts.length, 'script file')} read` });
   } else if (blocked) {
     coverage.homepage = 'blocked';
     notes.push('The site blocked automated access, so only DNS, HTTP headers and the security policy were checked. Scripts on the page may hide more vendors: add --repo for a complete picture.');

@@ -4,6 +4,7 @@ import { detectFromSignals, buildReport, toVendorRows } from './report.js';
 import { unrecognizedDomains } from './detect.js';
 import { isOwnHost } from './hosts.js';
 import { getVendor } from './vendors.js';
+import { plural } from './plural.js';
 
 /**
  * Scans a public domain and returns a sovereignty report.
@@ -22,7 +23,7 @@ export async function scanDomain(domain, opts = {}) {
     new Map(vendors.map((v) => [v.id, v.evidence])),
   );
 
-  const detail = `${vendors.length} vendors found${unrecognized.length ? `, ${unrecognized.length} unrecognized domains` : ''}`;
+  const detail = `${plural(vendors.length, 'vendor')} found${unrecognized.length ? `, ${plural(unrecognized.length, 'unrecognized domain')}` : ''}`;
   opts.onProgress?.({ id: 'match', label: 'Matching vendors', status: 'done', detail });
 
   return buildReport({

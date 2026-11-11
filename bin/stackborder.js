@@ -8,6 +8,7 @@
 import { parseArgs } from 'node:util';
 import { scanDomain, scanRepo, mergeVendorRows, buildReport, REGION_LABELS, VERSION } from '../src/index.js';
 import { createRequire } from 'node:module';
+import { plural } from '../src/plural.js';
 
 // The CLI is never bundled, so it reads package.json with require (a JSON import warns on older Node).
 const pkg = createRequire(import.meta.url)('../package.json');
@@ -120,7 +121,6 @@ function formatReport(report) {
   return lines.join('\n');
 }
 
-const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 /** One line that tells the reader how complete this report is. */
 function describeCoverage(coverage = {}) {
