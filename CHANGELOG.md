@@ -3,6 +3,13 @@
 All notable changes to this package are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.1.2] - 2026-11-12
+
+### Fixed
+
+- Repository scan: tag scripts written as a URL in source code are found, such as Google Analytics (`googletagmanager.com/gtag/js`) and Google Tag Manager (`gtm.js`). Before, only plain hostnames were matched, so vendors whose pattern includes a path were missed.
+- Domain scan: the progress message now counts all of the site's own script files ("8 of 63 script files read"), not only the ones that were read.
+
 ## [0.1.1] - 2026-11-12
 
 ### Fixed

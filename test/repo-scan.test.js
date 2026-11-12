@@ -95,6 +95,24 @@ describe('scanRepo', () => {
     assert.equal(report.aiSystems[0].suggestedTier, 'limited');
   });
 
+  it('finds tag scripts whose vendor pattern includes a path', async () => {
+    // The usual Next.js layout: Google Analytics and Tag Manager loaded by URL, no npm package.
+    const report = await scan({
+      'app/layout.tsx': [
+        '<Script src="https://www.googletagmanager.com/gtag/js?id=G-TEST123" />',
+        'j.src = "https://www.googletagmanager.com/gtm.js?id=" + i;',
+      ].join('\n'),
+    });
+    assert.deepEqual(ids(report), ['google-analytics', 'google-tag-manager']);
+    const ga = report.vendors.find((v) => v.id === 'google-analytics');
+    assert.deepEqual(ga.evidence, [{ source: 'Source code', value: 'app/layout.tsx: https://www.googletagmanager.com/gtag/js' }]);
+  });
+
+  it('does not credit a vendor for a different path on its domain', async () => {
+    const report = await scan({ 'src/links.ts': 'const help = "https://www.googletagmanager.com/about";' });
+    assert.deepEqual(ids(report), []);
+  });
+
   it('rejects a path that is not a folder', async () => {
     await assert.rejects(scanRepo('/definitely/not/here'), /is not a folder/);
   });

@@ -52,6 +52,12 @@ function hostPatterns(vendor) {
   return [...(d.host || []), ...(d.script || []), ...(d.html || [])].filter((p) => /^\.?[a-z0-9-]+(\.[a-z0-9-]+)+\.?$/i.test(p));
 }
 
+/** Patterns that are a hostname plus a path (googletagmanager.com/gtag/js): plain hostnames are matched as hosts. */
+function urlPatterns(vendor) {
+  const d = vendor.detect || {};
+  return [...(d.script || []), ...(d.html || [])].filter((p) => /^\.?[a-z0-9-]+(\.[a-z0-9-]+)+\/\S+$/i.test(p));
+}
+
 // Platforms that host other companies' apps: foo.vercel.app is some third party, not Vercel itself.
 const APP_PLATFORMS = new Set([
   'vercel.app', 'netlify.app', 'herokuapp.com', 'azurewebsites.net', 'github.io', 'pages.dev', 'workers.dev',
@@ -106,6 +112,7 @@ export function isKnownVendorDomain(host) {
  * @property {string[]} [urls] URLs loaded or referenced by a page
  * @property {string} [html] page source, matched against code snippets
  * @property {{ host: string, source: string, where?: string, wildcard?: boolean }[]} [hosts] hostnames from a CSP or from source code
+ * @property {{ url: string, where: string }[]} [sourceUrls] full URLs written in source code
  * @property {string[]} [npm] @property {string[]} [pypi]
  * @property {{ key: string, file: string }[]} [envKeys] variable names from .env.example files
  */
@@ -154,6 +161,10 @@ export function detectVendors(signals) {
       for (const pattern of d.html || []) {
         if (containsToken(signals.html, pattern)) add(vendor.id, 'Page code', pattern);
       }
+    }
+    for (const pattern of urlPatterns(vendor)) {
+      const hit = (signals.sourceUrls || []).find((u) => containsToken(u.url.replace(/^https?:\/\//, ''), pattern));
+      if (hit) add(vendor.id, 'Source code', `${hit.where}: ${hit.url}`.slice(0, 160));
     }
     for (const pattern of hostPatterns(vendor)) {
       for (const h of hosts) {

@@ -148,10 +148,10 @@ export async function collectDomainSignals(input, opts = {}) {
     progress({ id: 'http', label: 'Loading the homepage', status: 'done', detail: `${res.status} from ${new URL(res.url).hostname}, ${plural(resources.length, 'resource')}` });
 
     progress({ id: 'scripts', label: 'Reading the site’s own scripts', status: 'running' });
-    const ownScripts = resources
+    const allOwnScripts = resources
       .filter((x) => (x.tag === 'script' || x.tag === 'link') && /\.m?js(\?|$)/.test(new URL(x.url).pathname + new URL(x.url).search) && isOwnHost(new URL(x.url).hostname, domain))
-      .map((x) => x.url)
-      .slice(0, MAX_OWN_SCRIPTS);
+      .map((x) => x.url);
+    const ownScripts = allOwnScripts.slice(0, MAX_OWN_SCRIPTS);
     let bundleText = '';
     for (const src of ownScripts) {
       try {
@@ -166,7 +166,7 @@ export async function collectDomainSignals(input, opts = {}) {
     }
     urls = [...new Set([...urls, ...extractUrls(bundleText)])];
     if (bundleText) html += `\n${bundleText.slice(0, MAX_BUNDLE_TEXT)}`;
-    progress({ id: 'scripts', label: 'Reading the site’s own scripts', status: 'done', detail: `${coverage.scripts} of ${plural(ownScripts.length, 'script file')} read` });
+    progress({ id: 'scripts', label: 'Reading the site’s own scripts', status: 'done', detail: `${coverage.scripts} of ${plural(allOwnScripts.length, 'script file')} read` });
   } else if (blocked) {
     coverage.homepage = 'blocked';
     notes.push('The site blocked automated access, so only DNS, HTTP headers and the security policy were checked. Scripts on the page may hide more vendors: add --repo for a complete picture.');

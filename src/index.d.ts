@@ -172,6 +172,8 @@ export interface ScanSignals {
   urls?: string[];
   html?: string;
   hosts?: HostSignal[];
+  /** Full URLs written in source code, with the first file each appears in. */
+  sourceUrls?: Array<{ url: string; where: string }>;
   npm?: string[];
   pypi?: string[];
   /** Variable names from .env.example style files. */

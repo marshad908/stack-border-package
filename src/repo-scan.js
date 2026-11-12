@@ -3,13 +3,14 @@
 // Everything stays on the machine unless the user passes --upload.
 import { readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
-import { hostnameCandidates } from './hosts.js';
+import { extractUrls, hostnameCandidates } from './hosts.js';
 
 const SKIP_DIRS = new Set([
   'node_modules', 'dist', 'build', 'out', 'coverage', 'vendor', 'target', 'obj', 'venv', '__pycache__',
   'storybook-static', 'bower_components', 'jspm_packages',
 ]);
 const MAX_DEPTH = 8;
+const MAX_SOURCE_URLS = 5000;
 const MAX_FILES = 20_000;
 
 const MAX_SOURCE_FILES = 4000;
@@ -127,6 +128,8 @@ export async function collectRepoSignals(root) {
   const envFiles = [];
   /** host -> first file it appears in */
   const sourceHosts = new Map();
+  /** full URL -> first file it appears in, for vendor patterns with a path such as googletagmanager.com/gtag/js */
+  const sourceUrls = new Map();
   let sourceFiles = 0;
   let sourceBytes = 0;
 
@@ -164,6 +167,9 @@ export async function collectRepoSignals(root) {
           sourceFiles += 1;
           sourceBytes += size;
           for (const host of hostnameCandidates(text)) if (!sourceHosts.has(host)) sourceHosts.set(host, rel);
+          for (const url of extractUrls(text)) {
+            if (!sourceUrls.has(url) && sourceUrls.size < MAX_SOURCE_URLS) sourceUrls.set(url, rel);
+          }
         }
       }
     } catch {
@@ -179,6 +185,7 @@ export async function collectRepoSignals(root) {
       pypi: [...pypi],
       envKeys,
       hosts: [...sourceHosts].map(([host, where]) => ({ host, where, source: 'Source code' })),
+      sourceUrls: [...sourceUrls].map(([url, where]) => ({ url, where })),
     },
     configVendors,
     coverage: {
