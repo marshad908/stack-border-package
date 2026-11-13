@@ -64,7 +64,7 @@ export async function scanRepo(dir) {
     vendors: [...found.values()],
     coverage: { repo: collected.coverage },
     notes,
-    meta: { manifests: collected.manifests, packages: collected.signals.npm.length + collected.signals.pypi.length },
+    meta: { manifests: collected.manifests, packages: collected.signals.npm.length + collected.signals.pypi.length + collected.signals.composer.length },
   });
 }
 

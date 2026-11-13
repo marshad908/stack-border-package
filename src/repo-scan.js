@@ -21,7 +21,16 @@ const SOURCE_EXTENSIONS = new Set([
   '.js', '.mjs', '.cjs', '.jsx', '.ts', '.mts', '.cts', '.tsx', '.vue', '.svelte', '.astro',
   '.py', '.rb', '.go', '.php', '.java', '.kt', '.kts', '.cs', '.rs', '.ex', '.exs', '.swift', '.dart', '.scala',
   '.yaml', '.yml', '.toml', '.tf', '.hcl', '.ini', '.conf', '.properties',
+  // Templates: Shopify themes (Liquid), WordPress and Symfony (Twig), static sites and other theme systems.
+  '.liquid', '.html', '.htm', '.twig', '.hbs', '.handlebars', '.njk', '.erb', '.ejs',
 ]);
+
+// Shopify theme JSON (templates, sections, settings) names the apps embedded in the theme.
+const SHOPIFY_THEME_JSON = /(^|\/)(templates|sections|config|blocks)\/[^/]+\.json$/;
+const SHOPIFY_APP_REF = /shopify:\/\/apps\/([a-z0-9][a-z0-9-]*)\//g;
+
+// WordPress core ships with every install and says nothing about the site's own vendors.
+const WORDPRESS_CORE = new Set(['wp-admin', 'wp-includes']);
 const GENERATED_FILE = /\.(min|bundle|chunk)\.[a-z]+$|\.d\.ts$|(^|[\\/])(package-lock|yarn|pnpm-lock|composer\.lock)/i;
 
 // Template env files document which services an app needs. Real .env files hold secrets and are never read.
@@ -46,7 +55,13 @@ const CONFIG_FILES = {
   'scalingo.json': 'scalingo',
 };
 
-async function walk(dir, depth, out) {
+/** Folder names of installed WordPress plugins, e.g. "mailchimp-for-wp". */
+async function listWordPressPlugins(pluginsDir) {
+  const entries = await readdir(pluginsDir, { withFileTypes: true }).catch(() => []);
+  return entries.filter((e) => e.isDirectory() && !e.name.startsWith('.')).map((e) => e.name.toLowerCase());
+}
+
+async function walk(dir, depth, out, wpPlugins) {
   if (depth > MAX_DEPTH || out.length >= MAX_FILES) return;
   let entries;
   try {
@@ -57,12 +72,28 @@ async function walk(dir, depth, out) {
   for (const entry of entries) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
+      // Third-party plugin code mentions every service the plugin can talk to, used or not:
+      // the plugin's folder name says which vendor it is, so its code is not read.
+      if (entry.name === 'plugins' && path.basename(dir) === 'wp-content') {
+        for (const slug of await listWordPressPlugins(full)) wpPlugins.add(slug);
+        continue;
+      }
       // Hidden folders (.git, .next, .venv, ...) hold tooling and caches, not app code.
-      if (!SKIP_DIRS.has(entry.name) && !entry.name.startsWith('.')) await walk(full, depth + 1, out);
+      const skip = SKIP_DIRS.has(entry.name) || WORDPRESS_CORE.has(entry.name) || entry.name.startsWith('.');
+      if (!skip) await walk(full, depth + 1, out, wpPlugins);
     } else if (entry.isFile() && out.length < MAX_FILES) {
       out.push(full);
     }
   }
+}
+
+/** composer.json: the packages a PHP project depends on. */
+function parseComposer(text) {
+  const manifest = JSON.parse(text);
+  return ['require', 'require-dev']
+    .flatMap((field) => Object.keys(manifest[field] || {}))
+    .filter((name) => name.includes('/'))
+    .map((name) => name.toLowerCase());
 }
 
 function parseRequirements(text) {
@@ -118,10 +149,13 @@ export async function collectRepoSignals(root) {
   if (!info?.isDirectory()) throw new Error(`${root} is not a folder`);
 
   const files = [];
-  await walk(abs, 0, files);
+  const wpPlugins = new Set();
+  await walk(abs, 0, files, wpPlugins);
 
   const npm = new Set();
   const pypi = new Set();
+  const composer = new Set();
+  const shopifyApps = new Set();
   const manifests = [];
   const configVendors = [];
   const envKeys = [];
@@ -137,6 +171,8 @@ export async function collectRepoSignals(root) {
     const name = path.basename(file);
     const rel = path.relative(abs, file).replaceAll('\\', '/');
     if (Object.hasOwn(CONFIG_FILES, name)) configVendors.push({ vendorId: CONFIG_FILES[name], file: rel });
+    // Every Shopify theme has this layout: the shop itself runs on Shopify.
+    if (rel === 'layout/theme.liquid' || rel.endsWith('/layout/theme.liquid')) configVendors.push({ vendorId: 'shopify', file: rel });
 
     try {
       if (name === 'package.json') {
@@ -151,6 +187,15 @@ export async function collectRepoSignals(root) {
       } else if (name === 'pyproject.toml') {
         parsePyproject(await readFile(file, 'utf8')).forEach((d) => pypi.add(d));
         manifests.push(rel);
+      } else if (name === 'composer.json') {
+        for (const dep of parseComposer(await readFile(file, 'utf8'))) {
+          // WordPress sites managed with Composer (Bedrock) install plugins from WPackagist.
+          if (dep.startsWith('wpackagist-plugin/')) wpPlugins.add(dep.slice('wpackagist-plugin/'.length));
+          else composer.add(dep);
+        }
+        manifests.push(rel);
+      } else if (SHOPIFY_THEME_JSON.test(rel)) {
+        for (const [, handle] of (await readFile(file, 'utf8')).matchAll(SHOPIFY_APP_REF)) shopifyApps.add(handle);
       } else if (name === 'Pipfile') {
         parsePipfile(await readFile(file, 'utf8')).forEach((d) => pypi.add(d));
         manifests.push(rel);
@@ -170,6 +215,7 @@ export async function collectRepoSignals(root) {
           for (const url of extractUrls(text)) {
             if (!sourceUrls.has(url) && sourceUrls.size < MAX_SOURCE_URLS) sourceUrls.set(url, rel);
           }
+          if (name.endsWith('.liquid')) for (const [, handle] of text.matchAll(SHOPIFY_APP_REF)) shopifyApps.add(handle);
         }
       }
     } catch {
@@ -183,6 +229,9 @@ export async function collectRepoSignals(root) {
     signals: {
       npm: [...npm],
       pypi: [...pypi],
+      composer: [...composer],
+      wpPlugins: [...wpPlugins],
+      shopifyApps: [...shopifyApps],
       envKeys,
       hosts: [...sourceHosts].map(([host, where]) => ({ host, where, source: 'Source code' })),
       sourceUrls: [...sourceUrls].map(([url, where]) => ({ url, where })),
@@ -192,6 +241,8 @@ export async function collectRepoSignals(root) {
       manifests: manifests.length,
       sourceFiles,
       envFiles: envFiles.length,
+      wordpressPlugins: wpPlugins.size,
+      shopifyApps: shopifyApps.size,
       truncated: files.length >= MAX_FILES || sourceFiles >= MAX_SOURCE_FILES || sourceBytes >= MAX_SOURCE_TOTAL_BYTES,
     },
   };

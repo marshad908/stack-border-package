@@ -113,7 +113,9 @@ export function isKnownVendorDomain(host) {
  * @property {string} [html] page source, matched against code snippets
  * @property {{ host: string, source: string, where?: string, wildcard?: boolean }[]} [hosts] hostnames from a CSP or from source code
  * @property {{ url: string, where: string }[]} [sourceUrls] full URLs written in source code
- * @property {string[]} [npm] @property {string[]} [pypi]
+ * @property {string[]} [npm] @property {string[]} [pypi] @property {string[]} [composer]
+ * @property {string[]} [wpPlugins] folder names in wp-content/plugins
+ * @property {string[]} [shopifyApps] app handles referenced by a Shopify theme
  * @property {{ key: string, file: string }[]} [envKeys] variable names from .env.example files
  */
 
@@ -171,11 +173,22 @@ export function detectVendors(signals) {
         if (containsToken(h.host, pattern.replace(/\.$/, ''))) add(vendor.id, h.source, h.where ? `${h.where}: ${h.host}` : h.host);
       }
     }
-    for (const [key, source] of [['npm', 'npm package'], ['pypi', 'Python package']]) {
+    for (const [key, source] of [['npm', 'npm package'], ['pypi', 'Python package'], ['composer', 'Composer package']]) {
       for (const pattern of d[key] || []) {
         for (const pkg of signals[key] || []) {
           if (matchPackage(pkg, pattern)) add(vendor.id, source, pkg);
         }
+      }
+    }
+    for (const pattern of d.wpPlugin || []) {
+      for (const slug of signals.wpPlugins || []) {
+        if (slug === pattern) add(vendor.id, 'WordPress plugin', slug);
+      }
+    }
+    for (const pattern of d.shopifyApp || []) {
+      for (const handle of signals.shopifyApps || []) {
+        // App handles from the theme ("judge-me-reviews"): the vendor's name starts the handle.
+        if (handle === pattern || handle.startsWith(`${pattern}-`)) add(vendor.id, 'Shopify app', handle);
       }
     }
     for (const pattern of d.env || []) {

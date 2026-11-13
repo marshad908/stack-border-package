@@ -139,6 +139,10 @@ export interface RepoCoverage {
   manifests: number;
   sourceFiles: number;
   envFiles: number;
+  /** Installed WordPress plugins found in wp-content/plugins (identified by folder name, code not read). */
+  wordpressPlugins?: number;
+  /** Apps a Shopify theme references. */
+  shopifyApps?: number;
   /** True when the repository was too large to read completely. */
   truncated: boolean;
 }
@@ -191,6 +195,12 @@ export interface ScanSignals {
   sourceUrls?: Array<{ url: string; where: string }>;
   npm?: string[];
   pypi?: string[];
+  /** PHP packages from composer.json. */
+  composer?: string[];
+  /** Folder names in wp-content/plugins. */
+  wpPlugins?: string[];
+  /** App handles a Shopify theme references (shopify://apps/<handle>/...). */
+  shopifyApps?: string[];
   /** Variable names from .env.example style files. */
   envKeys?: Array<{ key: string; file: string }>;
 }

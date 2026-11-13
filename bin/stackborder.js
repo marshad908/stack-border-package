@@ -164,6 +164,8 @@ function describeCoverage(coverage = {}) {
   if (coverage.repo) {
     const r = coverage.repo;
     parts.push(`${plural(r.manifests, 'manifest')}, ${plural(r.sourceFiles, 'source file')}, ${plural(r.envFiles, '.env template')}`);
+    if (r.wordpressPlugins) parts.push(plural(r.wordpressPlugins, 'WordPress plugin'));
+    if (r.shopifyApps) parts.push(plural(r.shopifyApps, 'Shopify app'));
   } else {
     parts.push(out.yellow('code not scanned'));
   }

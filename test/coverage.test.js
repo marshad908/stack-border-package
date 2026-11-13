@@ -124,7 +124,7 @@ describe('scanRepo source code and env templates', () => {
 
     const report = await scanRepo(repo.root);
     assert.deepEqual(report.vendors.map((v) => v.id).sort(), ['mistral', 'resend', 'sentry', 'twilio']);
-    assert.deepEqual(report.coverage, { repo: { manifests: 1, sourceFiles: 2, envFiles: 1, truncated: false } });
+    assert.deepEqual(report.coverage, { repo: { manifests: 1, sourceFiles: 2, envFiles: 1, wordpressPlugins: 0, shopifyApps: 0, truncated: false } });
   });
 
   it('never reads real .env files', async (t) => {

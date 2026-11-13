@@ -3,6 +3,17 @@
 All notable changes to this package are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] - 2026-11-13
+
+### Added
+
+- Shopify themes: the platform is recognised from `layout/theme.liquid`, and apps embedded in the theme (`shopify://apps/...`) are reported.
+- WordPress: installed plugins are recognised by their folder name in `wp-content/plugins` and from `wpackagist-plugin/*` in `composer.json`. Plugin code and WordPress core are not read, so services a plugin merely supports are not reported.
+- `composer.json` is read for PHP dependencies (Laravel, Symfony and other PHP apps).
+- Template files are read: Liquid, Twig, HTML, Handlebars, Nunjucks, ERB and EJS.
+- 13 vendors, among them Jetpack (Automattic), Wordfence, Sucuri, OneSignal, Tidio, Judge.me, Okendo, Loox, Yotpo, Gorgias, Recharge, Omnisend and Privy, and Composer, WordPress plugin and Shopify app rules for 53 existing vendors.
+- `report.coverage.repo` counts WordPress plugins and Shopify apps.
+
 ## [0.2.0] - 2026-11-13
 
 ### Added

@@ -4,7 +4,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { listVendors, getVendor, loadVendorDb, alternativesFor, categoryLabel, CATEGORY_LABELS } from '../src/index.js';
 
-const DETECT_KEYS = new Set(['ns', 'mx', 'spf', 'txt', 'cname', 'ptr', 'header', 'script', 'html', 'npm', 'pypi', 'env', 'host']);
+const DETECT_KEYS = new Set(['ns', 'mx', 'spf', 'txt', 'cname', 'ptr', 'header', 'script', 'html', 'npm', 'pypi', 'composer', 'wpPlugin', 'shopifyApp', 'env', 'host']);
 const vendors = listVendors();
 
 describe('vendor database', () => {

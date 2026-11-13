@@ -31,7 +31,7 @@ $ npx stackborder acme.example   # illustrative output for a fictional company
 - **No account and no API key.** It runs on your machine and has zero dependencies.
 - **Scan a website, a codebase, or both.** A public domain (DNS, HTTP headers, security policy, page scripts), a local repository (dependencies, API hosts in code, `.env.example` names, deploy configs), or both merged into one report.
 - **Honest about gaps.** Every report says what was checked and lists third-party domains it could not identify, instead of hiding them.
-- **A database of 189 vendors**, each with its headquarters, data-region options, subprocessor page and EU alternatives.
+- **A database of 202 vendors**, each with its headquarters, data-region options, subprocessor page and EU alternatives.
 - **Built for CI.** Use `--fail-under` to fail a build when a new US vendor lowers your score.
 - **EU AI Act hints.** AI SDKs it finds are listed as candidates for your AI system inventory.
 
@@ -102,10 +102,13 @@ Pin the version (`@0.1`) so a new release cannot break your pipeline without war
 | Scripts, frames, images and preconnect hints on the homepage, and URLs inside up to 8 of the site's own script files | Stripe, Intercom, Google Analytics, PostHog EU |
 | `Content-Security-Policy` header, which lists every origin the site may load from, including scripts injected at runtime | `js.stripe.com`, `*.posthog.com` |
 | DNS TXT verification records | Reported as **likely**: they prove an account exists, not that data flows there |
-| npm and Python dependencies | `@sentry/nextjs`, `openai`, `boto3` |
+| npm, Python and PHP (Composer) dependencies | `@sentry/nextjs`, `openai`, `boto3`, `stripe/stripe-php` |
 | API hosts written in source code | `fetch('https://api.mistral.ai/...')` → Mistral |
 | Variable **names** in `.env.example`, `.env.sample` and `.env.template` | `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_POSTHOG_KEY` |
 | Deploy configuration files | `vercel.json` → Vercel, `fly.toml` → Fly.io |
+| Template files: Liquid, Twig, HTML, Handlebars, Nunjucks, ERB, EJS | A script tag in a theme |
+| WordPress plugins, by folder name in `wp-content/plugins` or as `wpackagist-plugin/*` in `composer.json` | `mailchimp-for-wp` → Mailchimp, `jetpack` → Automattic |
+| Apps a Shopify theme embeds (`shopify://apps/...` in theme JSON and Liquid) | `judge-me-reviews` → Judge.me |
 
 Findings backed only by a TXT record or a CSP entry are marked **likely**: a policy can still list a service the site stopped using. Any second source makes them **confirmed**.
 
@@ -121,6 +124,14 @@ A domain scan also reads the site's privacy policy, and its subprocessor list wh
 ```
 
 A vendor counts as named when the policy mentions the product or its company ("Google", "AWS"). Run it together with `--repo` to compare the policy with the server-side vendors too, such as payments, email and AI. When the policy cannot be read, for example because it is built by JavaScript, the report says so and claims nothing (`report.privacyPolicy` in JSON).
+
+### Shopify, WordPress and other theme systems
+
+Point `--repo` at a theme or site folder:
+
+- **Shopify themes.** The platform is recognised from `layout/theme.liquid`, script tags are read from Liquid files, and apps embedded as theme blocks are listed. Apps that inject their script at runtime leave no trace in the theme, so for a Shopify store the domain scan usually finds more than the code scan: run both.
+- **WordPress.** Installed plugins are recognised by their folder name. Plugin code itself is not read: a plugin mentions every service it can connect to, used or not, so reading it would report services the site never uses. WordPress core (`wp-admin`, `wp-includes`) is skipped for the same reason. Settings that live in the database, such as which mail service an SMTP plugin uses, cannot be seen from files.
+- **PHP applications** (Laravel, Symfony): `composer.json` is read like `package.json`.
 
 ### What a domain scan cannot see
 
