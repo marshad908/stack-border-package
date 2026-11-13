@@ -53,8 +53,9 @@ export function toVendorRows(found, extraText = '') {
  * @param {object} [input.meta]
  * @param {object} [input.coverage] which sources were checked, so readers can judge completeness
  * @param {object[]} [input.unrecognized] third-party domains that match no known vendor
+ * @param {object|null} [input.privacyPolicy] result of checkPrivacyPolicy, for domain scans
  */
-export function buildReport({ target, kind, vendors, notes = [], meta = {}, coverage = {}, unrecognized = [] }) {
+export function buildReport({ target, kind, vendors, notes = [], meta = {}, coverage = {}, unrecognized = [], privacyPolicy = null }) {
   return {
     target,
     kind,
@@ -64,11 +65,26 @@ export function buildReport({ target, kind, vendors, notes = [], meta = {}, cove
     vendors,
     aiSystems: suggestAiSystems(vendors),
     unrecognized,
+    privacyPolicy: privacyPolicy && withMissingVendors(privacyPolicy, vendors),
     coverage,
     notes,
     meta,
     disclaimer: DISCLAIMER,
   };
+}
+
+/**
+ * Adds the detected vendors the policy does not name. Only a policy whose text was read can be
+ * judged: for an unreadable one the list stays empty rather than accusing the site of omissions.
+ * "Likely" vendors are left out too: a DNS verification token shows an account, not that visitor
+ * data goes there.
+ */
+function withMissingVendors(policy, vendors) {
+  const named = new Set(policy.namedVendorIds);
+  const notNamed = policy.status === 'read'
+    ? vendors.filter((v) => v.confidence !== 'likely' && !named.has(v.id)).map((v) => v.id)
+    : [];
+  return { ...policy, notNamedVendorIds: notNamed };
 }
 
 /**

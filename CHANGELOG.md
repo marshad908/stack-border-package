@@ -3,6 +3,17 @@
 All notable changes to this package are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.2.0] - 2026-11-13
+
+### Added
+
+- Privacy policy check: a domain scan finds the site's privacy policy and subprocessor page, and lists the confirmed vendors they do not name (`report.privacyPolicy`). Together with `--repo` it also covers server-side vendors. An unreadable policy is reported as such, never as missing vendors.
+- `checkPrivacyPolicy` and `vendorsNamedIn` exports.
+
+### Changed
+
+- A domain scan without `--repo` now says plainly that server-side vendors cannot be seen from outside, and shows the command that includes them.
+
 ## [0.1.2] - 2026-11-12
 
 ### Fixed

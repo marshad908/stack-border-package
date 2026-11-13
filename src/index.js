@@ -32,6 +32,7 @@ export async function scanDomain(domain, opts = {}) {
     vendors,
     unrecognized,
     coverage: collected.coverage,
+    privacyPolicy: collected.privacyPolicy,
     notes: collected.notes,
     meta: {
       finalUrl: collected.finalUrl,
@@ -78,3 +79,4 @@ export { suggestAiSystems, HIGH_RISK_AREAS, RISK_TIERS, TRANSPARENCY_DUTIES } fr
 export { snapshotPage, htmlToLines, hashLines, diffLines } from './page-watch.js';
 export { extractUrls, resourceUrls, cspHosts, registrableDomain, hostnameCandidates } from './hosts.js';
 export { looksBlocked } from './domain-scan.js';
+export { checkPrivacyPolicy, vendorsNamedIn } from './privacy-policy.js';

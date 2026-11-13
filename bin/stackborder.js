@@ -112,7 +112,14 @@ function formatReport(report) {
     }
   }
 
+  if (report.privacyPolicy) lines.push('', ...describePrivacyPolicy(report.privacyPolicy, report.vendors));
+
   lines.push('', `  ${out.dim('Checked:')} ${describeCoverage(report.coverage)}`);
+  if (report.kind === 'domain' && !report.coverage.repo) {
+    lines.push(out.yellow('  A domain scan only sees what the website loads in a browser. Server-side vendors such as'));
+    lines.push(out.yellow('  databases, email, AI and payments cannot be seen from outside. To include them, run in your'));
+    lines.push(out.yellow(`  project folder: npx stackborder ${report.target} --repo .`));
+  }
   for (const note of report.notes) lines.push(out.yellow(`  note: ${note}`));
   lines.push('', out.dim(`  ${report.disclaimer}`));
   const feedbackUrl = pkg.bugs?.url;
@@ -121,6 +128,25 @@ function formatReport(report) {
   return lines.join('\n');
 }
 
+
+/** Which detected vendors the privacy policy leaves out. Only a policy whose text was read is judged. */
+function describePrivacyPolicy(policy, vendors) {
+  const lines = [out.bold('  Privacy policy')];
+  if (policy.status === 'not-found') return [...lines, out.dim('  No privacy policy was found from the homepage, so it was not compared.')];
+  if (policy.status === 'unreadable') {
+    return [...lines, out.dim(`  Found at ${policy.url}, but its text could not be read (it may be built by JavaScript), so it was not compared.`)];
+  }
+
+  lines.push(out.dim(`  ${[policy.url, policy.subprocessorsUrl].filter(Boolean).join(' and ')}`));
+  const nameOf = new Map(vendors.map((v) => [v.id, v.name]));
+  const notNamed = policy.notNamedVendorIds.map((id) => nameOf.get(id) ?? id);
+  if (!notNamed.length) return [...lines, out.green('  Every vendor found here is named in it.')];
+  return [
+    ...lines,
+    out.yellow(`  Not named in it: ${notNamed.join(', ')}`),
+    out.dim('  Visitors should be told who receives their data. Check whether these belong in the policy.'),
+  ];
+}
 
 /** One line that tells the reader how complete this report is. */
 function describeCoverage(coverage = {}) {
@@ -131,12 +157,15 @@ function describeCoverage(coverage = {}) {
     else if (coverage.homepage === 'blocked') parts.push(out.yellow('homepage blocked by an anti-bot check'));
     else parts.push(out.yellow('homepage unreachable'));
     parts.push(coverage.csp ? 'security policy (CSP)' : 'no CSP header');
+    if (coverage.privacyPolicy) {
+      parts.push({ read: 'privacy policy', unreadable: 'privacy policy unreadable', 'not-found': 'no privacy policy found' }[coverage.privacyPolicy]);
+    }
   }
   if (coverage.repo) {
     const r = coverage.repo;
     parts.push(`${plural(r.manifests, 'manifest')}, ${plural(r.sourceFiles, 'source file')}, ${plural(r.envFiles, '.env template')}`);
   } else {
-    parts.push(out.yellow('code not scanned (add --repo to find server-side vendors)'));
+    parts.push(out.yellow('code not scanned'));
   }
   return parts.join(' · ');
 }
@@ -263,6 +292,7 @@ async function runScans({ domain, repo, json }) {
     kind: 'domain',
     vendors: mergeVendorRows(site.vendors, code.vendors),
     unrecognized: site.unrecognized,
+    privacyPolicy: site.privacyPolicy,
     coverage: { ...site.coverage, ...code.coverage },
     notes: [...site.notes, ...code.notes],
     meta: { ...site.meta, repo: code.meta },

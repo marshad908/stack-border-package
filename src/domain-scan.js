@@ -5,6 +5,7 @@ import { Resolver } from 'node:dns/promises';
 import { plural } from './plural.js';
 import { safeFetch, normalizeDomain, FetchError } from './safe-fetch.js';
 import { extractUrls, resourceUrls, cspHosts, isOwnHost } from './hosts.js';
+import { checkPrivacyPolicy } from './privacy-policy.js';
 
 export { extractUrls };
 
@@ -111,7 +112,7 @@ export async function collectDomainSignals(input, opts = {}) {
   const progress = opts.onProgress || (() => {});
   const domain = normalizeDomain(input);
   const r = await resolver();
-  const coverage = { dns: false, homepage: 'unreachable', scripts: 0, csp: false };
+  const coverage = { dns: false, homepage: 'unreachable', scripts: 0, csp: false, privacyPolicy: 'not-found' };
 
   progress({ id: 'dns', label: 'Reading DNS records', status: 'running' });
   const dnsSignals = await collectDns(domain, r);
@@ -127,6 +128,7 @@ export async function collectDomainSignals(input, opts = {}) {
   const headers = res?.headers || blocked?.headers || {};
   let urls = [];
   let html = '';
+  let privacyPolicy = null;
   /** Hosts the page loads from, for the "not in our database" list. */
   const seenHosts = [];
 
@@ -167,6 +169,16 @@ export async function collectDomainSignals(input, opts = {}) {
     urls = [...new Set([...urls, ...extractUrls(bundleText)])];
     if (bundleText) html += `\n${bundleText.slice(0, MAX_BUNDLE_TEXT)}`;
     progress({ id: 'scripts', label: 'Reading the site’s own scripts', status: 'done', detail: `${coverage.scripts} of ${plural(allOwnScripts.length, 'script file')} read` });
+
+    progress({ id: 'policy', label: 'Reading the privacy policy', status: 'running' });
+    privacyPolicy = await checkPrivacyPolicy(res.body, res.url);
+    coverage.privacyPolicy = privacyPolicy.status;
+    const policyDetail = {
+      read: `${plural(privacyPolicy.namedVendorIds.length, 'known vendor')} named`,
+      unreadable: 'found, but its text could not be read (it may be built by JavaScript)',
+      'not-found': 'no privacy policy link found on the homepage',
+    }[privacyPolicy.status];
+    progress({ id: 'policy', label: 'Reading the privacy policy', status: privacyPolicy.status === 'read' ? 'done' : 'skipped', detail: policyDetail });
   } else if (blocked) {
     coverage.homepage = 'blocked';
     notes.push('The site blocked automated access, so only DNS, HTTP headers and the security policy were checked. Scripts on the page may hide more vendors: add --repo for a complete picture.');
@@ -183,6 +195,7 @@ export async function collectDomainSignals(input, opts = {}) {
     tls: res?.tls ?? null,
     signals: { ...dnsSignals, headers, urls, html, hosts },
     seenHosts,
+    privacyPolicy,
     coverage,
     notes,
   };

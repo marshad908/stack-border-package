@@ -109,6 +109,23 @@ Pin the version (`@0.1`) so a new release cannot break your pipeline without war
 
 Findings backed only by a TXT record or a CSP entry are marked **likely**: a policy can still list a service the site stopped using. Any second source makes them **confirmed**.
 
+### Privacy policy check
+
+A domain scan also reads the site's privacy policy, and its subprocessor list when the homepage or the policy links one. It then names every **confirmed** vendor the policy does not mention:
+
+```text
+  Privacy policy
+  https://acme.example/privacy
+  Not named in it: PostHog, Mailchimp
+  Visitors should be told who receives their data. Check whether these belong in the policy.
+```
+
+A vendor counts as named when the policy mentions the product or its company ("Google", "AWS"). Run it together with `--repo` to compare the policy with the server-side vendors too, such as payments, email and AI. When the policy cannot be read, for example because it is built by JavaScript, the report says so and claims nothing (`report.privacyPolicy` in JSON).
+
+### What a domain scan cannot see
+
+A domain scan sees what the website loads in a browser, plus DNS. Vendors that only run on your servers (a database, an email API, an AI model, a payment backend) leave no public trace, and neither do scripts that load only after a click or a delay. No tool can find them from the domain alone. Add `--repo` to include them.
+
 ### Nothing is left out silently
 
 Every report says what it could and could not check:
@@ -118,11 +135,11 @@ Every report says what it could and could not check:
   The site loads from these, but we cannot tell who runs them. Check them yourself.
   · sanity.io (csp header: cdn.sanity.io)
 
-  Checked: DNS · homepage, 8 script files · security policy (CSP) · code not scanned (add --repo to find server-side vendors)
+  Checked: DNS · homepage, 8 script files · security policy (CSP) · privacy policy · code not scanned
 ```
 
 - **Unrecognized domains.** Third-party hosts the site loads from that match no vendor are listed instead of dropped (`report.unrecognized` in JSON).
-- **Coverage.** `report.coverage` records whether DNS answered, whether the homepage loaded or was blocked by an anti-bot check, how many script files were read, whether a CSP was present, and how many manifests, source files and env templates a repository scan read.
+- **Coverage.** `report.coverage` records whether DNS answered, whether the homepage loaded or was blocked by an anti-bot check, how many script files were read, whether a CSP was present, whether the privacy policy could be read, and how many manifests, source files and env templates a repository scan read.
 - **Anti-bot pages are detected.** A challenge page is never scanned as if it were the real site; the report says the homepage was blocked.
 
 ## How the score works
@@ -192,6 +209,7 @@ const report = buildReport({
 | `alternativesFor(vendorOrId)` | EU alternatives in the same category. |
 | `safeFetch(url, options)` | HTTP GET with protection against server-side request forgery (see below). |
 | `snapshotPage(url)`, `diffLines(before, after)` | Watch a vendor's subprocessor page for changes. |
+| `checkPrivacyPolicy(html, url)`, `vendorsNamedIn(text)` | Find a site's privacy policy and list the vendors it names. |
 | `VERSION` | The package version. |
 
 TypeScript types are included. The raw database is available as `stackborder/vendors.json`:

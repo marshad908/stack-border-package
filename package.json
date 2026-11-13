@@ -1,6 +1,6 @@
 {
   "name": "stackborder",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Find out which third-party vendors a website or codebase sends data to, and score how much of it stays under EU law.",
   "keywords": [
     "gdpr",

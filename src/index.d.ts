@@ -78,6 +78,8 @@ export interface Report {
   aiSystems: AiSystemSuggestion[];
   /** Third-party domains the site loads from that match no vendor in the database. */
   unrecognized: UnrecognizedDomain[];
+  /** Privacy policy comparison, for domain scans that could load the homepage. */
+  privacyPolicy: PrivacyPolicyCheck | null;
   /** What was checked, so readers can judge how complete the report is. */
   coverage: Coverage;
   notes: string[];
@@ -148,7 +150,20 @@ export interface Coverage {
   scripts?: number;
   /** True when the site sends a Content-Security-Policy header. */
   csp?: boolean;
+  /** Whether the privacy policy was found and its text could be read. */
+  privacyPolicy?: PrivacyPolicyCheck['status'];
   repo?: RepoCoverage;
+}
+
+export interface PrivacyPolicyCheck {
+  /** 'unreadable': found, but too little text to judge (often a page built by JavaScript). */
+  status: 'read' | 'unreadable' | 'not-found';
+  url: string | null;
+  subprocessorsUrl: string | null;
+  /** Every vendor in the database that the policy names, by product or by company. */
+  namedVendorIds: string[];
+  /** Detected vendors the policy does not name. Always empty unless status is 'read'. */
+  notNamedVendorIds: string[];
 }
 
 export interface HostSignal {
@@ -182,6 +197,8 @@ export interface ScanSignals {
 
 export function scanDomain(domain: string, opts?: { onProgress?: (step: ProgressStep) => void }): Promise<Report>;
 export function scanRepo(dir: string): Promise<Report>;
+export function checkPrivacyPolicy(homepageHtml: string, homepageUrl: string): Promise<Omit<PrivacyPolicyCheck, 'notNamedVendorIds'>>;
+export function vendorsNamedIn(text: string): Set<string>;
 export function safeFetch(url: string | URL, opts?: SafeFetchOptions): Promise<FetchResult>;
 export function normalizeDomain(input: string): string;
 export function isPrivateAddress(ip: string): boolean;
